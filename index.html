@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rice Bell-Twi!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@600;900&display=swap');
+        
+        body { 
+            background: #080811; 
+            color: #ffffff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            font-family: 'Press Start 2P', monospace; 
+            overflow: auto; 
+            user-select: none; 
+            -webkit-user-select: none; 
+        }
+
+        .title-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #canvas { 
+            background: #0f1026; 
+            border: 4px solid #f59e0b; 
+            box-shadow: 0 0 35px rgba(245, 158, 11, 0.4); 
+            border-radius: 12px; 
+            image-rendering: pixelated; 
+            max-width: 100%; 
+            height: auto; 
+            touch-action: none; 
+        }
+
+        .hud { font-family: 'Press Start 2P', monospace; }
+
+        .ctrl-btn { 
+            background: rgba(30, 41, 59, 0.95); 
+            border: 2px solid #f59e0b; 
+            color: #fbbf24; 
+            font-weight: bold; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            touch-action: manipulation; 
+            user-select: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .ctrl-btn:active, .ctrl-btn.active-touch { 
+            background: #d97706; 
+            color: #ffffff;
+            border-color: #fde047; 
+            transform: scale(0.94); 
+        }
+
+        .item-slot {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #334155;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            background: rgba(15, 23, 42, 0.9);
+            color: #94a3b8;
+            transition: all 0.2s ease;
+        }
+
+        .item-slot.active {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.25);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .cyber-overlay {
+            background: rgba(10, 10, 20, 0.92);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.25);
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4">
+
+    <div id="tap-ui" class="absolute z-30 cyber-overlay p-8 rounded-2xl max-w-lg text-center cursor-pointer mx-4 border-amber-500">
+        <h1 class="title-font text-3xl md:text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-500 tracking-wider">RICE BELL-TWI!</h1>
+        <p class="text-[11px] text-amber-300 tracking-widest mb-6">sf2026plusproultra AUDIO ENGINE</p>
+        <p class="text-xs md:text-sm text-gray-300 leading-relaxed mb-8">
+            화면을 터치하여 사운드 엔진을 깨우고<br>쌀알 초인종 벨튀 대작전을 시작하세요!
+        </p>
+        <div id="tap-btn" class="px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-base md:text-lg font-bold rounded-xl border-b-4 border-amber-800 animate-pulse inline-block shadow-lg">
+            TAP TO START ENGINE
+        </div>
+        <p class="mt-8 text-[9px] text-gray-500 font-mono">Copyright 2026 super rice jamjam studio.</p>
+    </div>
+
+    <div id="title-ui" class="absolute z-20 cyber-overlay p-6 md:p-8 rounded-2xl max-w-lg text-center hidden mx-4 border-orange-500">
+        <h1 id="title-header" class="title-font text-2xl md:text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300 tracking-wide">RICE BELL-TWI!</h1>
+        
+        <div id="title-desc" class="text-xs text-gray-200 leading-relaxed mb-6 space-y-3">
+            <p class="text-amber-300 font-bold text-sm">"누르고 튀어라! 들키면 끝장이다!"</p>
+            <p class="text-gray-300 text-[11px] leading-normal">
+                집집마다 초인종(Bell)을 누르고 튀세요! 벨을 누르고 1초 뒤 "누구야 잡으러 가자" 음성이 울리고, 5초 후 주인장들이 쫓아옵니다!
+            </p>
+            <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700 text-[10px] text-left space-y-1">
+                <p class="text-yellow-400 font-bold">[조작 안내]</p>
+                <p>• 이동: 방향키 / WASD / 하단 패드</p>
+                <p>• 초인종 누르기 / 아이템 사용: Space Bar / USE BUTTON</p>
+                <p class="text-amber-400 mt-1">★ 최대 10개 아이템 슬롯 지원! ★</p>
+            </div>
+            <p class="text-[9px] text-gray-400 italic">※ 15초간 입력이 없으면 자동 데모 플레이가 실행됩니다.</p>
+        </div>
+
+        <button id="start-btn" class="px-8 py-4 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white text-base md:text-lg font-bold rounded-xl border-b-4 border-yellow-900 active:translate-y-1 active:border-b-0 transition-all cursor-pointer shadow-lg w-full">
+            START BELL-TWI!
+        </button>
+        <p class="mt-6 text-[9px] text-gray-500 font-mono">Copyright 2026 super rice jamjam studio.</p>
+    </div>
+
+    <div class="w-full max-w-[600px] flex justify-between items-center mb-2 hud px-2 text-[10px] md:text-xs">
+        <div class="flex flex-col gap-1">
+            <span class="text-yellow-400">SCORE: <span id="score-val" class="text-white text-sm font-bold">0</span></span>
+            <span class="text-amber-400">DOORS: <span id="doors-val">0</span> / 10</span>
+        </div>
+        <div class="flex flex-col gap-1 text-center">
+            <span class="text-cyan-400 font-bold">STAGE: <span id="stage-val">1</span> / 30</span>
+        </div>
+        <div class="flex flex-col gap-1 text-right">
+            <span class="text-emerald-400">COMBO: <span id="combo-val">x1</span></span>
+            <span id="status-val" class="text-slate-400 font-bold">STATE: READY</span>
+        </div>
+    </div>
+
+    <canvas id="canvas" width="600" height="720"></canvas>
+
+    <div class="w-full max-w-[600px] mt-2 flex items-center justify-between px-3 bg-slate-900/90 border-2 border-slate-700 p-2 rounded-xl">
+        <span class="text-[9px] text-amber-400 font-bold tracking-wider">ITEMS (MAX 10):</span>
+        <div id="item-slots-container" class="flex gap-1 overflow-x-auto py-1">
+            <div class="item-slot active" id="slot-0">-</div>
+            <div class="item-slot" id="slot-1">-</div>
+            <div class="item-slot" id="slot-2">-</div>
+            <div class="item-slot" id="slot-3">-</div>
+            <div class="item-slot" id="slot-4">-</div>
+            <div class="item-slot" id="slot-5">-</div>
+            <div class="item-slot" id="slot-6">-</div>
+            <div class="item-slot" id="slot-7">-</div>
+            <div class="item-slot" id="slot-8">-</div>
+            <div class="item-slot" id="slot-9">-</div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-[600px] mt-3 flex justify-between items-center px-2">
+        <div class="grid grid-cols-3 gap-2 w-40 h-40">
+            <div></div>
+            <button id="btn-up" class="ctrl-btn text-xl">▲</button>
+            <div></div>
+            <button id="btn-left" class="ctrl-btn text-xl">◀</button>
+            <div></div>
+            <button id="btn-right" class="ctrl-btn text-xl">▶</button>
+            <div></div>
+            <button id="btn-down" class="ctrl-btn text-xl">▼</button>
+            <div></div>
+        </div>
+        <div class="flex gap-2">
+            <button id="btn-item" class="ctrl-btn w-32 h-24 bg-gradient-to-b from-amber-600 to-orange-700 text-xs md:text-sm border-yellow-400 text-white font-bold tracking-wide">
+                RING / USE<br><span class="text-[9px] text-amber-200">(SPACE)</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let audioCtx;
+        
+        const BUFFERS = {
+            pulse6: { url: 'pulse_6.25.wav', baseHz: 10.0, buffer: null },
+            pulse12: { url: 'pulse_12.5.wav', baseHz: 11.5, buffer: null },
+            pulse25: { url: 'pulse_25.wav', baseHz: 11.5, buffer: null },
+            pulse50: { url: 'pulse_50.wav', baseHz: 80.0, buffer: null },
+            bassTone: { url: 'bass_tone.wav', baseHz: 12.5, buffer: null },
+            whiteNoise: { url: 'whitenoise.wav', baseHz: 1.0, buffer: null },
+            shortNoise: { url: 'short_noise.wav', baseHz: 3.0, buffer: null },
+            bell: { url: 'bell.wav', baseHz: 670.0, buffer: null },
+            manePulse: { url: 'mane_pulse.wav', baseHz: 26.0, buffer: null },
+            sixSeven: { url: 'six_seven.mp3', baseHz: null, buffer: null },
+            hello: { url: '안녕하세요.mp3', baseHz: null, buffer: null },
+            catchVoice: { url: '누구야_잡으러가자.mp3', baseHz: null, buffer: null },
+            banseong: { url: '당장_반성해.mp3', baseHz: null, buffer: null },
+            successBell: { url: '벨튀_성공.mp3', baseHz: null, buffer: null }
+        };
+
+        let gameState = "TAP_WAIT";
+        let idleTimer = 0;
+        let countdownTimer = 0;
+        let countdownVal = 3;
+        let playCount = 0;
+
+        let engineGainNode = null;
+        let engineSourceNode = null;
+
+        const noteFreqs = { 
+            "C2": 65.41, "D2": 73.42, "E2": 82.41, "F2": 87.31, "G2": 98.0, "A2": 110.0, "B2": 123.47,
+            "C3": 130.81, "D3": 146.83, "E3": 164.81, "F3": 174.61, "G3": 196.0, "A3": 220.0, "B3": 246.94,
+            "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.0, "A4": 440.0, "B4": 493.88,
+            "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.0, "B5": 987.77
+        };
+
+        const titleMelodySeq = [
+            "A4", null, "C5", "E5", "A4", null, "G4", "E4", 
+            "F4", "A4", "C5", null, "D5", "C5", "B4", "G4"
+        ];
+        const titleBassSeq = ["A2", "A2", "F2", "F2", "D2", "D2", "E2", "E2"];
+        let titleStep = 0;
+        let titleBgmInterval = null;
+
+        const gameMelodySeq = [
+            "C5", "E5", "G5", "C6", "G5", "E5", "C5", "G4",
+            "A4", "C5", "E5", "A5", "E5", "C5", "A4", "F4",
+            "G4", "B4", "D5", "G5", "D5", "B4", "G4", "E4",
+            "F4", "A4", "C5", "F5", "E5", "D5", "C5", "B4"
+        ];
+        const gameBassSeq = [
+            "C2", "C2", "A2", "A2", "F2", "F2", "G2", "G2",
+            "C3", "C3", "A2", "A2", "F2", "F2", "G2", "G2"
+        ];
+        const gameBellSeq = [
+            "C6", null, null, "E5", null, "G5", null, null,
+            "A5", null, null, "C5", null, "E6", null, null
+        ];
+        let gameStep = 0;
+        let gameBgmInterval = null;
+
+        async function loadAudioBuffers() {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+
+                const loadSingle = async (key) => {
+                    try {
+                        const resp = await fetch(BUFFERS[key].url);
+                        const arr = await resp.arrayBuffer();
+                        BUFFERS[key].buffer = await audioCtx.decodeAudioData(arr);
+                    } catch(e) {}
+                };
+
+                await Promise.all(Object.keys(BUFFERS).map(k => loadSingle(k)));
+            } catch (e) {}
+        }
+
+        function playSample(bufObj, targetHz, duration = 0.3, volume = 0.5) {
+            if (!bufObj || !bufObj.buffer || !audioCtx) return;
+            try {
+                const src = audioCtx.createBufferSource();
+                src.buffer = bufObj.buffer;
+
+                let playbackRate = 1.0;
+                if (bufObj.baseHz && targetHz) {
+                    playbackRate = Math.max(0.05, targetHz / bufObj.baseHz);
+                }
+                src.playbackRate.value = playbackRate;
+
+                const actualDur = Math.min((bufObj.buffer.duration / playbackRate), duration);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + actualDur);
+
+                src.connect(gain);
+                gain.connect(audioCtx.destination);
+                src.start(audioCtx.currentTime);
+                src.stop(audioCtx.currentTime + actualDur);
+            } catch(e) {}
+        }
+
+        function playExternalBuffer(bufObj) {
+            if (!bufObj || !bufObj.buffer || !audioCtx) return;
+            try {
+                const src = audioCtx.createBufferSource();
+                src.buffer = bufObj.buffer;
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                src.connect(gain);
+                gain.connect(audioCtx.destination);
+                src.start(audioCtx.currentTime);
+            } catch(e) {}
+        }
+
+        function playDoorbellSound() {
+            playSample(BUFFERS.bell, 880.0, 0.45, 0.95);
+            playSample(BUFFERS.bell, 1320.0, 0.35, 0.7);
+            playSample(BUFFERS.pulse50, 520.0, 0.25, 0.4);
+            playExternalBuffer(BUFFERS.successBell);
+        }
+
+        function playCatchSound() {
+            playSample(BUFFERS.pulse6, 40.0, 0.25, 0.9);
+            playSample(BUFFERS.whiteNoise, 15.0, 0.3, 0.8);
+            playExternalBuffer(BUFFERS.banseong);
+        }
+
+        function startEngineSound() {
+            if (!BUFFERS.manePulse.buffer || !audioCtx || engineSourceNode) return;
+            try {
+                engineSourceNode = audioCtx.createBufferSource();
+                engineSourceNode.buffer = BUFFERS.manePulse.buffer;
+                engineSourceNode.loop = true;
+
+                engineGainNode = audioCtx.createGain();
+                engineGainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
+
+                engineSourceNode.connect(engineGainNode);
+                engineGainNode.connect(audioCtx.destination);
+                engineSourceNode.start(0);
+            } catch(e) {}
+        }
+
+        function updateEngineSound(running) {
+            if (!engineSourceNode || !audioCtx) return;
+            try {
+                let rate = running ? 2.2 : 1.0;
+                engineSourceNode.playbackRate.setValueAtTime(rate, audioCtx.currentTime);
+            } catch(e) {}
+        }
+
+        function stopEngineSound() {
+            if (engineSourceNode) {
+                try {
+                    engineSourceNode.stop();
+                    engineSourceNode.disconnect();
+                } catch(e) {}
+                engineSourceNode = null;
+            }
+        }
+
+        function startMusicEngine() {
+            if (titleBgmInterval) clearInterval(titleBgmInterval);
+            if (gameBgmInterval) clearInterval(gameBgmInterval);
+
+            const titleIntervalMs = (60 / 140) * 1000 * 0.5;
+            titleBgmInterval = setInterval(() => {
+                if (gameState === "TITLE_SCREEN" || gameState === "DEMO") {
+                    const bassNote = titleBassSeq[Math.floor(titleStep / 2) % titleBassSeq.length];
+                    playSample(BUFFERS.bassTone, noteFreqs[bassNote] || 110.0, 0.3, 0.6);
+
+                    const melNote = titleMelodySeq[titleStep % titleMelodySeq.length];
+                    if (melNote) {
+                        playSample(BUFFERS.pulse25, noteFreqs[melNote] || 523.25, 0.18, 0.35);
+                    }
+
+                    if (titleStep % 8 === 0) {
+                        playSample(BUFFERS.bell, noteFreqs["A5"], 0.25, 0.25);
+                    }
+
+                    titleStep++;
+                }
+            }, titleIntervalMs);
+
+            const gameIntervalMs = (60 / 160) * 1000 * 0.25;
+            gameBgmInterval = setInterval(() => {
+                if (gameState === "PLAYING") {
+                    const step = gameStep % 32;
+
+                    const bassNote = gameBassSeq[Math.floor(step / 2) % gameBassSeq.length];
+                    playSample(BUFFERS.bassTone, noteFreqs[bassNote] || 110.0, 0.15, 0.65);
+
+                    const melNote = gameMelodySeq[step % gameMelodySeq.length];
+                    if (melNote) {
+                        playSample(BUFFERS.pulse12, noteFreqs[melNote] || 659.25, 0.12, 0.4);
+                        playSample(BUFFERS.pulse50, noteFreqs[melNote] || 659.25, 0.1, 0.25);
+                    }
+
+                    const bellNote = gameBellSeq[step % gameBellSeq.length];
+                    if (bellNote) {
+                        playSample(BUFFERS.bell, noteFreqs[bellNote] || 783.99, 0.2, 0.3);
+                    }
+
+                    if (step % 4 === 0) {
+                        playSample(BUFFERS.pulse50, 98.0, 0.08, 0.35);
+                    }
+                    if (step % 8 === 4) {
+                        playSample(BUFFERS.shortNoise, 350.0, 0.06, 0.4);
+                    }
+                    if (step % 2 === 1) {
+                        playSample(BUFFERS.whiteNoise, 25.0, 0.04, 0.15);
+                    }
+
+                    gameStep++;
+                }
+            }, gameIntervalMs);
+        }
+
+        let STREET_LEFT = 80;
+        let STREET_RIGHT = 520;
+        let player = {
+            x: 300,
+            y: 540,
+            w: 36,
+            h: 48,
+            speed: 5.5,
+            score: 0,
+            doorsRung: 0,
+            combo: 1,
+            sprinting: false,
+            sprintTimer: 0,
+            shieldTimer: 0
+        };
+
+        let currentStage = 1;
+        let houses = [];
+        let owners = [];
+        let items = [];
+        let inventory = [];
+        let keys = {};
+        let paralyzedTimer = 0; 
+        let itemSpawnTimer = 0;
+
+        function initializeGame(keepScore = false) {
+            player.x = 300;
+            player.y = 540;
+            if (!keepScore) {
+                player.score = 0;
+                currentStage = 1;
+                player.combo = 1;
+                inventory = [];
+            }
+            player.doorsRung = 0;
+            player.sprintTimer = 0;
+            player.shieldTimer = 0;
+            paralyzedTimer = 0;
+            items = [];
+            itemSpawnTimer = 0;
+            updateInventoryUI();
+
+            houses = [];
+            for (let i = 0; i < 10; i++) {
+                houses.push({
+                    id: i,
+                    x: 100 + (i % 2 === 0 ? 40 : 300),
+                    y: 100 + Math.floor(i / 2) * 120,
+                    w: 160,
+                    h: 80,
+                    rung: false,
+                    ownerAlert: false
+                });
+            }
+
+            owners = [];
+        }
+
+        function updateInventoryUI() {
+            for (let i = 0; i < 10; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                if (!slot) continue;
+                if (i < inventory.length) {
+                    const item = inventory[i];
+                    if (item === '67') slot.innerText = "67";
+                    else if (item === 'handcuff') slot.innerText = "🔗";
+                    else if (item === 'mosquito') slot.innerText = "🦟";
+                } else {
+                    slot.innerText = "-";
+                }
+                if (i === 0) slot.classList.add('active');
+                else slot.classList.remove('active');
+            }
+        }
+
+        function useTopItem() {
+            if (inventory.length === 0 || paralyzedTimer > 0) return;
+            const item = inventory.shift();
+            updateInventoryUI();
+
+            if (item === '67') {
+                playExternalBuffer(BUFFERS.sixSeven);
+                player.sprintTimer = 6000;
+                playSample(BUFFERS.bell, 1200.0, 0.5, 1.0);
+                houses.forEach(h => {
+                    if (!h.rung) {
+                        h.rung = true;
+                        player.doorsRung++;
+                        player.score += 200 * player.combo;
+                        player.combo++;
+                    }
+                });
+            } else if (item === 'handcuff') {
+                if (Math.random() < 0.5) {
+                    owners.forEach(o => {
+                        o.chaseDelay = 99999;
+                        o.voiceDelay = 99999;
+                    });
+                    playSample(BUFFERS.bell, 900.0, 0.4, 0.9);
+                } else {
+                    paralyzedTimer = 3000;
+                    playSample(BUFFERS.whiteNoise, 10.0, 0.6, 0.8);
+                }
+            } else if (item === 'mosquito') {
+                if (Math.random() < 0.5) {
+                    owners.forEach(o => {
+                        o.speed = 0;
+                    });
+                    playSample(BUFFERS.shortNoise, 400.0, 0.3, 0.7);
+                } else {
+                    paralyzedTimer = 4000;
+                    playSample(BUFFERS.pulse6, 30.0, 0.8, 0.8);
+                }
+            }
+        }
+
+        document.getElementById('tap-ui').addEventListener('click', async () => {
+            await loadAudioBuffers();
+            if (navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch(e) {}
+            }
+            playExternalBuffer(BUFFERS.hello);
+            startMusicEngine();
+
+            document.getElementById('tap-ui').style.display = 'none';
+            document.getElementById('title-ui').style.display = 'block';
+            
+            gameState = "TITLE_SCREEN";
+            idleTimer = 0;
+            initializeGame();
+            requestAnimationFrame(gameLoop);
+        });
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('title-ui').style.display = 'none';
+            gameState = "COUNTDOWN";
+            countdownVal = 3;
+            countdownTimer = 0;
+            playCount++;
+            initializeGame(false);
+            playSample(BUFFERS.bell, 330.0, 0.4, 0.8);
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, 600, 720);
+
+            if (gameState === "TITLE_SCREEN") {
+                idleTimer++;
+                if (idleTimer > 900) {
+                    gameState = "DEMO";
+                    document.getElementById('title-ui').style.display = 'none';
+                    initializeGame(false);
+                }
+
+                drawStreet();
+                drawHouses();
+                drawPlayer();
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            if (gameState === "COUNTDOWN") {
+                drawStreet();
+                drawHouses();
+                drawPlayer();
+
+                countdownTimer++;
+                if (countdownTimer % 60 === 0 && countdownVal > 0) {
+                    countdownVal--;
+                    if (countdownVal > 0) {
+                        playSample(BUFFERS.bell, 330.0, 0.4, 0.8);
+                    } else if (countdownVal === 0) {
+                        playSample(BUFFERS.bell, 950.0, 0.6, 1.0);
+                    }
+                }
+
+                if (countdownVal <= 0 && countdownTimer >= 220) {
+                    gameState = "PLAYING";
+                    startEngineSound();
+                }
+
+                ctx.fillStyle = "rgba(10, 10, 20, 0.65)";
+                ctx.fillRect(0, 0, 600, 720);
+
+                ctx.fillStyle = countdownVal === 0 ? "#f59e0b" : "#facc15";
+                ctx.font = "bold 48px 'Orbitron', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(countdownVal > 0 ? countdownVal : "GO!", 300, 340);
+
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            if (gameState === "DEMO") {
+                player.x += Math.sin(Date.now() / 300) * 2;
+                player.y += Math.cos(Date.now() / 400) * 1.5;
+            }
+
+            if (gameState === "PLAYING" || gameState === "DEMO") {
+                if (player.sprintTimer > 0) player.sprintTimer -= 16.67;
+                if (player.shieldTimer > 0) player.shieldTimer -= 16.67;
+                if (paralyzedTimer > 0) paralyzedTimer -= 16.67;
+
+                itemSpawnTimer += 16.67;
+                if (itemSpawnTimer > 4000 && items.length < 5) {
+                    itemSpawnTimer = 0;
+                    const types = ['67', 'handcuff', 'mosquito'];
+                    items.push({
+                        x: STREET_LEFT + 30 + Math.random() * (STREET_RIGHT - STREET_LEFT - 60),
+                        y: 80 + Math.random() * 560,
+                        type: types[Math.floor(Math.random() * types.length)]
+                    });
+                }
+
+                for (let i = items.length - 1; i >= 0; i--) {
+                    let itm = items[i];
+                    let dx = (player.x + player.w / 2) - itm.x;
+                    let dy = (player.y + player.h / 2) - itm.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < 30) {
+                        if (itm.type === '67') {
+                            playExternalBuffer(BUFFERS.sixSeven);
+                        }
+                        if (inventory.length < 10) {
+                            inventory.push(itm.type);
+                            updateInventoryUI();
+                        }
+                        items.splice(i, 1);
+                    }
+                }
+
+                owners.forEach(owner => {
+                    if (owner.voiceDelay > 0) {
+                        owner.voiceDelay -= 16.67;
+                        if (owner.voiceDelay <= 0) {
+                            playExternalBuffer(BUFFERS.catchVoice);
+                            owner.chaseDelay = 5000;
+                        }
+                    } else if (owner.chaseDelay > 0) {
+                        owner.chaseDelay -= 16.67;
+                    } else {
+                        let dx = player.x - owner.x;
+                        let dy = player.y - owner.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist > 1 && owner.speed > 0) {
+                            owner.x += (dx / dist) * owner.speed;
+                            owner.y += (dy / dist) * owner.speed;
+                        }
+
+                        if (dist < 30 && !player.shieldTimer) {
+                            gameState = "GAMEOVER";
+                            playCatchSound();
+
+                            document.getElementById('title-ui').style.display = 'block';
+                            document.getElementById('title-header').innerText = "CAUGHT! (반성 시간)";
+                            document.getElementById('title-desc').innerHTML = `
+                                <span class="text-xl text-amber-400 font-bold block mb-4">FINAL SCORE: ${player.score}</span>
+                                <span class="text-xs text-gray-300">STAGE ${currentStage}에서 주인장에게 붙잡혔습니다!</span>
+                            `;
+                        }
+                    }
+                });
+
+                if (gameState === "PLAYING" && paralyzedTimer <= 0) {
+                    let currentSpeed = player.speed;
+                    if (player.sprintTimer > 0) currentSpeed *= 2.2;
+
+                    if (keys["ArrowLeft"] || keys["a"]) player.x = Math.max(STREET_LEFT, player.x - currentSpeed);
+                    if (keys["ArrowRight"] || keys["d"]) player.x = Math.min(STREET_RIGHT - player.w, player.x + currentSpeed);
+                    if (keys["ArrowUp"] || keys["w"]) player.y = Math.max(60, player.y - currentSpeed);
+                    if (keys["ArrowDown"] || keys["s"]) player.y = Math.min(640, player.y + currentSpeed);
+
+                    updateEngineSound(true);
+                } else if (paralyzedTimer > 0) {
+                    updateEngineSound(false);
+                }
+
+                document.getElementById('score-val').innerText = player.score;
+                document.getElementById('doors-val').innerText = player.doorsRung;
+                document.getElementById('combo-val').innerText = "x" + player.combo;
+                document.getElementById('stage-val').innerText = currentStage;
+
+                if (player.doorsRung >= 10 && gameState === "PLAYING") {
+                    currentStage++;
+                    if (currentStage > 30) {
+                        currentStage = 1;
+                    }
+                    playSample(BUFFERS.bell, 1050.0, 0.8, 1.0);
+                    initializeGame(true);
+                }
+
+                const statusEl = document.getElementById('status-val');
+                if (paralyzedTimer > 0) {
+                    statusEl.innerText = "TRAPPED / PARALYZED!";
+                    statusEl.className = "text-red-400 font-bold animate-pulse";
+                } else if (player.sprintTimer > 0) {
+                    statusEl.innerText = "67 NITRO SPEED!";
+                    statusEl.className = "text-yellow-400 font-bold animate-pulse";
+                } else {
+                    statusEl.innerText = "STATE: RUNNING";
+                    statusEl.className = "text-slate-400 font-bold";
+                }
+
+                drawStreet();
+                drawHouses();
+                drawItems();
+                drawPlayer();
+                drawOwners();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawStreet() {
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(STREET_LEFT, 0, STREET_RIGHT - STREET_LEFT, 720);
+
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(STREET_LEFT - 20, 0, 20, 720);
+            ctx.fillRect(STREET_RIGHT, 0, 20, 720);
+
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([20, 20]);
+            ctx.beginPath();
+            ctx.moveTo(300, 0);
+            ctx.lineTo(300, 720);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawHouses() {
+            houses.forEach(house => {
+                ctx.fillStyle = house.rung ? "#334155" : "#475569";
+                ctx.fillRect(house.x, house.y, house.w, house.h);
+                ctx.strokeStyle = "#cbd5e1";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(house.x, house.y, house.w, house.h);
+
+                ctx.fillStyle = "#b45309";
+                ctx.fillRect(house.x + house.w / 2 - 18, house.y + house.h - 40, 36, 40);
+                
+                ctx.fillStyle = house.rung ? "#ef4444" : "#facc15";
+                ctx.beginPath();
+                ctx.arc(house.x + house.w / 2, house.y + house.h - 22, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawItems() {
+            items.forEach(item => {
+                ctx.save();
+                ctx.translate(item.x, item.y);
+                ctx.fillStyle = "#f59e0b";
+                ctx.beginPath();
+                ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#fef08a";
+                ctx.stroke();
+
+                ctx.fillStyle = "#0f172a";
+                ctx.font = "bold 9px 'Press Start 2P', monospace";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let icon = item.type === '67' ? "67" : (item.type === 'handcuff' ? "🔗" : "🦟");
+                ctx.fillText(icon, 0, 0);
+                ctx.restore();
+            });
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+
+            if (player.shieldTimer > 0) {
+                ctx.strokeStyle = "#38bdf8";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = "#fef08a";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 16, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#ca8a04";
+            ctx.stroke();
+
+            ctx.fillStyle = "#0f172a";
+            ctx.beginPath();
+            ctx.arc(-5, -6, 3, 0, Math.PI * 2);
+            ctx.arc(5, -6, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawOwners() {
+            owners.forEach(owner => {
+                ctx.save();
+                ctx.translate(owner.x, owner.y);
+                ctx.fillStyle = owner.chaseDelay > 0 ? "#f97316" : "#dc2626";
+                ctx.beginPath();
+                ctx.arc(0, 0, 18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#ffffff";
+                ctx.stroke();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "8px 'Press Start 2P', monospace";
+                ctx.textAlign = "center";
+                let label = owner.voiceDelay > 0 ? "대기중" : (owner.chaseDelay > 0 ? "누구야?!" : "격노!");
+                ctx.fillText(label, 0, -24);
+                ctx.restore();
+            });
+        }
+
+        function triggerBellTwi() {
+            if (paralyzedTimer > 0) return;
+            houses.forEach(house => {
+                let dx = (player.x + player.w / 2) - (house.x + house.w / 2);
+                let dy = (player.y + player.h / 2) - (house.y + house.h);
+                if (Math.abs(dx) < 45 && Math.abs(dy) < 45) {
+                    if (!house.rung) {
+                        house.rung = true;
+                        player.doorsRung++;
+                        player.score += 150 * player.combo;
+                        player.combo++;
+                        
+                        playDoorbellSound();
+
+                        let baseOwnerSpeed = 2.2 + (player.doorsRung * 0.15) + ((currentStage - 1) * 0.25);
+                        owners.push({
+                            x: house.x + house.w / 2,
+                            y: house.y + house.h,
+                            speed: baseOwnerSpeed,
+                            voiceDelay: 1000,
+                            chaseDelay: 0
+                        });
+                    }
+                }
+            });
+            useTopItem();
+        }
+
+        const returnToTitleFromDemo = () => {
+            if (gameState === "DEMO") {
+                gameState = "TITLE_SCREEN";
+                document.getElementById('title-ui').style.display = 'block';
+                idleTimer = 0;
+                return true;
+            }
+            return false;
+        };
+
+        window.addEventListener('keydown', e => { 
+            if (returnToTitleFromDemo()) return;
+            if (e.key === " ") {
+                triggerBellTwi();
+            }
+            keys[e.key] = true; 
+        });
+        window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+        canvas.addEventListener('pointerdown', () => {
+            returnToTitleFromDemo();
+        });
+
+        const setupBtn = (id, key) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            const activate = (e) => {
+                e.preventDefault();
+                if (returnToTitleFromDemo()) return;
+                keys[key] = true;
+                el.classList.add('active-touch');
+            };
+            
+            const deactivate = (e) => {
+                e.preventDefault();
+                keys[key] = false;
+                el.classList.remove('active-touch');
+            };
+
+            el.addEventListener('pointerdown', activate);
+            el.addEventListener('pointerup', deactivate);
+            el.addEventListener('pointercancel', deactivate);
+            el.addEventListener('pointerleave', deactivate);
+
+            el.addEventListener('touchstart', activate, { passive: false });
+            el.addEventListener('touchend', deactivate, { passive: false });
+            el.addEventListener('touchcancel', deactivate, { passive: false });
+        };
+
+        setupBtn('btn-up', 'ArrowUp');
+        setupBtn('btn-down', 'ArrowDown');
+        setupBtn('btn-left', 'ArrowLeft');
+        setupBtn('btn-right', 'ArrowRight');
+
+        document.getElementById('btn-item').addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (returnToTitleFromDemo()) return;
+            triggerBellTwi();
+        });
+    </script>
+</body>
+</html>
